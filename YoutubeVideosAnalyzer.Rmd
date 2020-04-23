@@ -1,0 +1,70 @@
+---
+title: "YoutubeAnalyzerPage"
+author: "Swathi"
+date: "22/04/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## R Markdown
+
+```{r channelanalysis ,echo=FALSE , message=FALSE,warning=FALSE,results='hide'}
+
+library(tuber)
+library(dplyr)
+library(plyr)
+library(gridExtra)
+library(ggplot2)
+library(writexl)
+library(readxl)
+library(kableExtra)
+
+
+channel_analysis=read_xlsx('channelanalysis.xlsx','channelstats_sheet')
+channel_analysis$id=as.character(channel_analysis$id) 
+
+#excelsheet=write_xlsx(channel_analysis,"channelanalysis.xlsx")
+#To view channel analysis in a neat format
+channel_analysis_tab=data.frame("Title"=channel_analysis$snippet.title,
+                                "View Count"=channel_analysis$statistics.viewCount,
+                                "Subscriber Count"=channel_analysis$statistics.subscriberCount,
+                                "Video Count"=channel_analysis$statistics.videoCount)
+
+#Top 20 videos in all channel and top 3 in each channel colr scheme channel
+videostats_All=data.frame(matrix(ncol = 0,nrow = 0))
+
+videostats_All=read_xlsx('channelanalysis.xlsx','videostats_sheet')
+videostats_All <- merge(videostats_All,channel_analysis[,c("id","snippet.title")], by.x = "channelid",by.y = "id",sort = F, all.x = T)
+
+videostats_All$likeCount=as.numeric(videostats_All$likeCount)
+videostats_All$viewCount=as.numeric(videostats_All$viewCount)
+
+Top_Liked_all=tail(videostats_All[order(videostats_All$likeCount),],20)
+Top_Viewed_all=tail(videostats_All[order(videostats_All$viewCount),],20)
+Top_Viewed_all$channelid=as.factor(Top_Viewed_all$channelid)
+Viewedplot=ggplot(Top_Viewed_all, aes(x=viewCount, y=title, fill=snippet.title)) +
+  geom_bar(stat="identity", width=0.75,position = position_dodge(width=0.05))+theme_minimal()
+Viewedplot=Viewedplot + theme(axis.text = element_text(size=70),legend.text = element_text(size =70),legend.title = element_text(size = 70) ,axis.text.x=element_blank(),axis.ticks.x=element_blank(),axis.title.y=element_blank())+ labs(x ="Number of Views",fill="CHANNEL TITLE")+scale_fill_brewer(palette = "Set2")
+
+
+
+```
+
+
+```{r channelanalysis_tab ,echo=FALSE , message=FALSE,warning=FALSE,results='asis'}
+kable(channel_analysis_tab, format = "markdown", padding = 0)
+
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, fig.height=50 , fig.width=100,fig.align='center' ,echo=FALSE ,message=FALSE,warning=FALSE}
+plot(Viewedplot)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
